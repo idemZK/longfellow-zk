@@ -13,7 +13,7 @@
 # limitations under the License.
 
 add_library(util OBJECT log.cc crypto.cc)
-target_link_libraries(util crypto zstd)
+target_link_libraries(util /home/zack/idemzk/openssl-wasm/precompiled/lib/libcrypto.a /home/zack/idemzk/openssl-wasm/precompiled/lib/libssl.a /home/zack/idemzk/zstd-wasm/lib/libzstd.a )
 
 proofs_add_tests(ceildiv_test)
 

@@ -13,25 +13,25 @@
 # limitations under the License.
 
 add_compile_definitions(OPENSSL_SUPPRESS_DEPRECATED=1)
-include(GoogleTest)
-find_package(benchmark REQUIRED)
-find_package(GTest REQUIRED)
+# include(GoogleTest)
+# find_package(benchmark REQUIRED)
+# find_package(GTest REQUIRED)
 
 macro(proofs_add_testing_libraries PROG)
-    # libraries that are common enough to be useful in all tests
-    target_link_libraries(${PROG} testing_main)    
-
-#   -static won't work on Debian because libbenchmark-dev is
-#   dynamic only.  One could enable -static and comment out
-#   benchmark, in which case some tests won't build
-
-#    target_link_libraries(${PROG} -static)
-
-    # on Debian buster, gtest seems to need pthread
-    target_link_libraries(${PROG} gtest pthread)
-    target_link_libraries(${PROG} benchmark::benchmark)
-
-    gtest_discover_tests(${PROG})
+#     # libraries that are common enough to be useful in all tests
+#     target_link_libraries(${PROG} testing_main)    
+# 
+# #   -static won't work on Debian because libbenchmark-dev is
+# #   dynamic only.  One could enable -static and comment out
+# #   benchmark, in which case some tests won't build
+# 
+# #    target_link_libraries(${PROG} -static)
+# 
+#     # on Debian buster, gtest seems to need pthread
+#     target_link_libraries(${PROG} gtest pthread)
+#     target_link_libraries(${PROG} benchmark::benchmark)
+# 
+#     gtest_discover_tests(${PROG})
 endmacro()
 
 macro(proofs_add_test PROG)

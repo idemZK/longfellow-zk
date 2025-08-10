@@ -13,7 +13,7 @@
 # limitations under the License.
 
 add_library(mdoc mdoc_zk.cc zk_spec.cc)
-target_link_libraries(mdoc flatsha ec algebra util zstd)
+target_link_libraries(mdoc flatsha ec algebra util /home/zack/idemzk/zstd-wasm/lib/libzstd.a )
 
 add_library(mdoc_static STATIC mdoc_zk.cc zk_spec.cc
     $<TARGET_OBJECTS:flatsha>
@@ -32,8 +32,8 @@ target_link_libraries(mdoc_signature_test mdoc)
 # so that we know that the static library works
 add_executable(mdoc_zk_test mdoc_zk_test.cc)
 target_link_libraries(mdoc_zk_test mdoc_static)
-proofs_add_testing_libraries(mdoc_zk_test)
-target_link_libraries(mdoc_zk_test crypto zstd)
+# proofs_add_testing_libraries(mdoc_zk_test)
+target_link_libraries(mdoc_zk_test /home/zack/idemzk/openssl-wasm/precompiled/lib/libcrypto.a /home/zack/idemzk/openssl-wasm/precompiled/lib/libssl.a /home/zack/idemzk/zstd-wasm/lib/libzstd.a )
 
 set(installable_libs mdoc_static)
 install(TARGETS ${installable_libs} DESTINATION lib)

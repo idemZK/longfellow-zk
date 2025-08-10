@@ -246,6 +246,76 @@ static inline gf2_128_elt_t gf2_128_mul(gf2_128_elt_t x, gf2_128_elt_t y) {
 }
 
 }  // namespace proofs
+#elif defined(__wasm__)
+
+namespace proofs {
+
+typedef int32_t v128_t __attribute__((__vector_size__(16), __aligned__(16)));
+using gf2_128_elt_t = v128_t;
+
+// Emulate _mm_clmulepi64_si128(a, b, imm)
+gf2_128_elt_t clmul128(const gf2_128_elt_t& a, const gf2_128_elt_t& b, int imm) {
+  // uint64_t a_lo = lo64(a);
+  // uint64_t a_hi = hi64(a);
+  // uint64_t b_lo = lo64(b);
+  // uint64_t b_hi = hi64(b);
+
+  // uint64_t res_lo = 0, res_hi = 0;
+
+  // switch (imm & 0x11) {
+  //   case 0x00:  // low × low
+  //     res_lo = clmul64(a_lo, b_lo);
+  //     res_hi = 0;
+  //     break;
+  //   case 0x01:  // low × high
+  //     res_lo = clmul64(a_lo, b_hi);
+  //     res_hi = 0;
+  //     break;
+  //   case 0x10:  // high × low
+  //     res_lo = clmul64(a_hi, b_lo);
+  //     res_hi = 0;
+  //     break;
+  //   case 0x11:  // high × high
+  //     res_lo = clmul64(a_hi, b_hi);
+  //     res_hi = 0;
+  //     break;
+  // }
+
+  // return _mm_set_epi64x(static_cast<int64_t>(res_hi), static_cast<int64_t>(res_lo));
+}
+
+static inline std::array<uint64_t, 2> uint64x2_of_gf2_128(gf2_128_elt_t x) {
+  return std::array<uint64_t, 2>{static_cast<uint64_t>(x[0]),
+                                 static_cast<uint64_t>(x[1])};
+}
+
+static inline gf2_128_elt_t gf2_128_of_uint64x2(
+    const std::array<uint64_t, 2> &x) {
+  // return _mm_set_epi64x(static_cast<long long>(x[1]), static_cast<long long>(x[0]));
+}
+
+static inline gf2_128_elt_t gf2_128_add(gf2_128_elt_t x, gf2_128_elt_t y) {
+  // return _mm_xor_si128(x, y);
+}
+
+// return t0 + x^64 * t1
+static inline gf2_128_elt_t gf2_128_reduce(gf2_128_elt_t t0, gf2_128_elt_t t1) {
+  // const gf2_128_elt_t poly = {0x87};
+  // t0 = _mm_xor_si128(t0, _mm_slli_si128(t1, 64 /*bits*/ / 8 /*bits/byte*/));
+  // t0 = _mm_xor_si128(t0, _mm_clmulepi64_si128(t1, poly, 0x01));
+  // return t0;
+}
+static inline gf2_128_elt_t gf2_128_mul(gf2_128_elt_t x, gf2_128_elt_t y) {
+  // gf2_128_elt_t t1a = _mm_clmulepi64_si128(x, y, 0x01);
+  // gf2_128_elt_t t1b = _mm_clmulepi64_si128(x, y, 0x10);
+  // gf2_128_elt_t t1 = gf2_128_add(t1a, t1b);
+  // gf2_128_elt_t t2 = _mm_clmulepi64_si128(x, y, 0x11);
+  // t1 = gf2_128_reduce(t1, t2);
+  // gf2_128_elt_t t0 = _mm_clmulepi64_si128(x, y, 0x00);
+  // t0 = gf2_128_reduce(t0, t1);
+  // return t0;
+}
+}  // namespace proofs
 #else
 #error "unimplemented gf2k/sysdep.h"
 #endif
