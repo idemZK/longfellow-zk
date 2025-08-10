@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_library(util OBJECT log.cc crypto.cc $ENV{IDEMZK_DIR}/zstd-wasm/zstd.S)
-target_link_libraries(util $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a )
+add_library(util OBJECT log.cc crypto.cc)
+target_link_libraries(util $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a $ENV{IDEMZK_DIR}/zstd-wasm/zstd.o)
 
 proofs_add_tests(ceildiv_test)
 
