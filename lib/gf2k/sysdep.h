@@ -247,75 +247,78 @@ static inline gf2_128_elt_t gf2_128_mul(gf2_128_elt_t x, gf2_128_elt_t y) {
 
 }  // namespace proofs
 #elif defined(__wasm__)
+#include <wasm_simd128.h>
 
 namespace proofs {
 
-typedef int32_t v128_t __attribute__((__vector_size__(16), __aligned__(16)));
+// Represent a GF(2^128) element as a WASM 128-bit vector
 using gf2_128_elt_t = v128_t;
 
-// Emulate _mm_clmulepi64_si128(a, b, imm)
-gf2_128_elt_t clmul128(const gf2_128_elt_t& a, const gf2_128_elt_t& b, int imm) {
-  // uint64_t a_lo = lo64(a);
-  // uint64_t a_hi = hi64(a);
-  // uint64_t b_lo = lo64(b);
-  // uint64_t b_hi = hi64(b);
-
-  // uint64_t res_lo = 0, res_hi = 0;
-
-  // switch (imm & 0x11) {
-  //   case 0x00:  // low × low
-  //     res_lo = clmul64(a_lo, b_lo);
-  //     res_hi = 0;
-  //     break;
-  //   case 0x01:  // low × high
-  //     res_lo = clmul64(a_lo, b_hi);
-  //     res_hi = 0;
-  //     break;
-  //   case 0x10:  // high × low
-  //     res_lo = clmul64(a_hi, b_lo);
-  //     res_hi = 0;
-  //     break;
-  //   case 0x11:  // high × high
-  //     res_lo = clmul64(a_hi, b_hi);
-  //     res_hi = 0;
-  //     break;
-  // }
-
-  // return _mm_set_epi64x(static_cast<int64_t>(res_hi), static_cast<int64_t>(res_lo));
+/* ---- lane helpers (lane0=low64, lane1=high64) ---- */
+static inline uint64_t lo64(v128_t v) { return (uint64_t)wasm_i64x2_extract_lane(v, 0); }
+static inline uint64_t hi64(v128_t v) { return (uint64_t)wasm_i64x2_extract_lane(v, 1); }
+static inline v128_t make128(uint64_t hi, uint64_t lo) {
+  return wasm_i64x2_make((int64_t)hi, (int64_t)lo);
 }
 
-static inline std::array<uint64_t, 2> uint64x2_of_gf2_128(gf2_128_elt_t x) {
-  return std::array<uint64_t, 2>{static_cast<uint64_t>(x[0]),
-                                 static_cast<uint64_t>(x[1])};
+/* API-compat helpers (match your other arches) */
+static inline gf2_128_elt_t gf2_128_add(gf2_128_elt_t a, gf2_128_elt_t b) {
+  return wasm_v128_xor(a, b);
+}
+static inline std::array<uint64_t,2> uint64x2_of_gf2_128(gf2_128_elt_t x) {
+  return { lo64(x), hi64(x) };
+}
+static inline gf2_128_elt_t gf2_128_of_uint64x2(const std::array<uint64_t,2>& x) {
+  return make128(x[1], x[0]);
 }
 
-static inline gf2_128_elt_t gf2_128_of_uint64x2(
-    const std::array<uint64_t, 2> &x) {
-  // return _mm_set_epi64x(static_cast<long long>(x[1]), static_cast<long long>(x[0]));
+/* ---- 64×64 carry-less multiply (GF(2)) -> (hi, lo) ---- */
+static inline void clmul64(uint64_t a, uint64_t b, uint64_t& hi, uint64_t& lo) {
+  uint64_t r_hi = 0, r_lo = 0, a_hi = 0, a_lo = a;
+  while (b) {
+    if (b & 1) { r_lo ^= a_lo; r_hi ^= a_hi; }
+    uint64_t carry = a_lo >> 63;
+    a_lo <<= 1;
+    a_hi = (a_hi << 1) ^ carry;
+    b >>= 1;
+  }
+  hi = r_hi; lo = r_lo;
 }
 
-static inline gf2_128_elt_t gf2_128_add(gf2_128_elt_t x, gf2_128_elt_t y) {
-  // return _mm_xor_si128(x, y);
+/* ---- emulate _mm_clmulepi64_si128(a,b,imm in {0x00,0x01,0x10,0x11}) ---- */
+static inline v128_t clmul128(v128_t a, v128_t b, int imm) {
+  const uint64_t a_lo = lo64(a), a_hi = hi64(a);
+  const uint64_t b_lo = lo64(b), b_hi = hi64(b);
+  uint64_t hi = 0, lo = 0;
+  switch (imm & 0x11) {
+    case 0x00: clmul64(a_lo, b_lo, hi, lo); break; // low*low
+    case 0x01: clmul64(a_lo, b_hi, hi, lo); break; // low*high
+    case 0x10: clmul64(a_hi, b_lo, hi, lo); break; // high*low
+    default  : clmul64(a_hi, b_hi, hi, lo); break; // high*high (0x11)
+  }
+  return make128(hi, lo);
 }
 
-// return t0 + x^64 * t1
-static inline gf2_128_elt_t gf2_128_reduce(gf2_128_elt_t t0, gf2_128_elt_t t1) {
-  // const gf2_128_elt_t poly = {0x87};
-  // t0 = _mm_xor_si128(t0, _mm_slli_si128(t1, 64 /*bits*/ / 8 /*bits/byte*/));
-  // t0 = _mm_xor_si128(t0, _mm_clmulepi64_si128(t1, poly, 0x01));
-  // return t0;
+/* ---- reduction for poly x^128 + x^7 + x^2 + x + 1 (0x87) ----
+   t0 ^= (t1 << 64);  t0 ^= CLMUL(t1, {hi=0x87, lo=0}, imm=0x01) */
+static inline v128_t gf2_128_reduce(v128_t t0, v128_t t1) {
+  t0 = wasm_v128_xor(t0, make128(lo64(t1), 0));
+  const v128_t poly = make128(0x87ull, 0ull);
+  const v128_t red  = clmul128(t1, poly, 0x01);
+  return wasm_v128_xor(t0, red);
 }
+
+/* ---- GF(2^128) multiply ---- */
 static inline gf2_128_elt_t gf2_128_mul(gf2_128_elt_t x, gf2_128_elt_t y) {
-  // gf2_128_elt_t t1a = _mm_clmulepi64_si128(x, y, 0x01);
-  // gf2_128_elt_t t1b = _mm_clmulepi64_si128(x, y, 0x10);
-  // gf2_128_elt_t t1 = gf2_128_add(t1a, t1b);
-  // gf2_128_elt_t t2 = _mm_clmulepi64_si128(x, y, 0x11);
-  // t1 = gf2_128_reduce(t1, t2);
-  // gf2_128_elt_t t0 = _mm_clmulepi64_si128(x, y, 0x00);
-  // t0 = gf2_128_reduce(t0, t1);
-  // return t0;
+  v128_t t1 = wasm_v128_xor(clmul128(x, y, 0x01), clmul128(x, y, 0x10)); // cross terms
+  v128_t t2 = clmul128(x, y, 0x11);                                      // high*high
+  t1 = gf2_128_reduce(t1, t2);
+
+  v128_t t0 = clmul128(x, y, 0x00);                                      // low*low
+  return gf2_128_reduce(t0, t1);
 }
-}  // namespace proofs
+
+} // namespace proofs
 #else
 #error "unimplemented gf2k/sysdep.h"
 #endif
