@@ -16,4 +16,4 @@ proofs_add_tests(verify_test)
 target_link_libraries(verify_test ec util)
 
 proofs_add_tests(verify_external_test)
-target_link_libraries(verify_external_test ec util $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a )
+target_link_libraries(verify_external_test ec util crypto ssl )
