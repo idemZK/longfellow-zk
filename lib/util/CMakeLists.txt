@@ -13,7 +13,7 @@
 # limitations under the License.
 
 add_library(util OBJECT log.cc crypto.cc)
-target_link_libraries(util crypto ssl zstd)
+target_link_libraries(util)
 
 proofs_add_tests(ceildiv_test)
 

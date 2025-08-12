@@ -16,4 +16,4 @@ proofs_add_tests(verify_test)
 target_link_libraries(verify_test ec util)
 
 proofs_add_tests(verify_external_test)
-target_link_libraries(verify_external_test ec util crypto ssl )
+target_link_libraries(verify_external_test ec util)

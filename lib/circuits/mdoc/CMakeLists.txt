@@ -13,16 +13,13 @@
 # limitations under the License.
 
 add_library(mdoc mdoc_zk.cc zk_spec.cc)
-target_link_libraries(mdoc flatsha ec algebra util crypto ssl zstd )
+target_link_libraries(mdoc flatsha ec algebra util)
 
 add_library(mdoc_static_$ENV{WASM_TARGET} STATIC mdoc_zk.cc zk_spec.cc
     $<TARGET_OBJECTS:flatsha>
     $<TARGET_OBJECTS:ec>
     $<TARGET_OBJECTS:algebra>
     $<TARGET_OBJECTS:util>
-    ${WASM_LIB_DIR}/libcrypto.a
-    ${WASM_LIB_DIR}/libssl.a
-    ${WASM_LIB_DIR}/libzstd.a
 )
 
 proofs_add_test(mdoc_signature_test)
@@ -36,7 +33,7 @@ target_link_libraries(mdoc_signature_test mdoc)
 add_executable(mdoc_zk_test mdoc_zk_test.cc)
 target_link_libraries(mdoc_zk_test mdoc_static_$ENV{WASM_TARGET})
 # proofs_add_testing_libraries(mdoc_zk_test)
-target_link_libraries(mdoc_zk_test crypto ssl wasi-emulated-pthread zstd )
+target_link_libraries(mdoc_zk_test)
 
 set(installable_libs mdoc_static_$ENV{WASM_TARGET})
 install(TARGETS ${installable_libs} DESTINATION lib)
