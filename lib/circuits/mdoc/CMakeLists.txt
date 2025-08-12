@@ -15,7 +15,7 @@
 add_library(mdoc mdoc_zk.cc zk_spec.cc)
 target_link_libraries(mdoc flatsha ec algebra util crypto ssl zstd )
 
-add_library(mdoc_static_${ARCHITECTURE} STATIC mdoc_zk.cc zk_spec.cc
+add_library(mdoc_static_$ENV{WASM_TARGET} STATIC mdoc_zk.cc zk_spec.cc
     $<TARGET_OBJECTS:flatsha>
     $<TARGET_OBJECTS:ec>
     $<TARGET_OBJECTS:algebra>
@@ -34,11 +34,11 @@ target_link_libraries(mdoc_signature_test mdoc)
 # link mdoc_zk_test explicitly against the static library
 # so that we know that the static library works
 add_executable(mdoc_zk_test mdoc_zk_test.cc)
-target_link_libraries(mdoc_zk_test mdoc_static_${ARCHITECTURE})
+target_link_libraries(mdoc_zk_test mdoc_static_$ENV{WASM_TARGET})
 # proofs_add_testing_libraries(mdoc_zk_test)
 target_link_libraries(mdoc_zk_test crypto ssl wasi-emulated-pthread zstd )
 
-set(installable_libs mdoc_static_${ARCHITECTURE})
+set(installable_libs mdoc_static_$ENV{WASM_TARGET})
 install(TARGETS ${installable_libs} DESTINATION lib)
 install(FILES mdoc_zk.h DESTINATION include)
 
