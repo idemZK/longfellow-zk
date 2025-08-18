@@ -49,7 +49,7 @@ elseif(DEFINED ENV{WASM_TARGET})
     include_directories("$ENV{IDEMZK_DIR}/openssl/include")
     include_directories("$ENV{IDEMZK_DIR}/zstd-wasm/zstd/lib")
     # This might be wasi only?
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -msimd128")
     set(ARCH_FLAGS -D__wasm__ )
 else()
     set(ARCH_FLAGS "")
