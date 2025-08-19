@@ -13,17 +13,30 @@
 # limitations under the License.
 
 add_library(mdoc mdoc_zk.cc zk_spec.cc)
-target_link_libraries(mdoc flatsha ec algebra util $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a  $ENV{IDEMZK_DIR}/zstd-wasm/zstd.o )
+if(WASM)
+    target_link_libraries(mdoc flatsha ec algebra util $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a  $ENV{IDEMZK_DIR}/zstd-wasm/zstd.o )
+else()
+    target_link_libraries(mdoc flatsha ec algebra util zstd)
+endif()
 
-add_library(mdoc_static STATIC mdoc_zk.cc zk_spec.cc
-    $<TARGET_OBJECTS:flatsha>
-    $<TARGET_OBJECTS:ec>
-    $<TARGET_OBJECTS:algebra>
-    $<TARGET_OBJECTS:util>
-    $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a
-    $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a
-    $ENV{IDEMZK_DIR}/zstd-wasm/zstd.o
-)
+if(WASM)
+    add_library(mdoc_static STATIC mdoc_zk.cc zk_spec.cc
+        $<TARGET_OBJECTS:flatsha>
+        $<TARGET_OBJECTS:ec>
+        $<TARGET_OBJECTS:algebra>
+        $<TARGET_OBJECTS:util>
+        $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a
+        $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a
+        $ENV{IDEMZK_DIR}/zstd-wasm/zstd.o
+    )
+else()
+    add_library(mdoc_static STATIC mdoc_zk.cc zk_spec.cc
+        $<TARGET_OBJECTS:flatsha>
+        $<TARGET_OBJECTS:ec>
+        $<TARGET_OBJECTS:algebra>
+        $<TARGET_OBJECTS:util>
+    )
+endif()
 
 proofs_add_test(mdoc_signature_test)
 target_link_libraries(mdoc_signature_test mdoc)
@@ -36,7 +49,11 @@ target_link_libraries(mdoc_signature_test mdoc)
 add_executable(mdoc_zk_test mdoc_zk_test.cc)
 target_link_libraries(mdoc_zk_test mdoc_static)
 # proofs_add_testing_libraries(mdoc_zk_test)
-target_link_libraries(mdoc_zk_test $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a wasi-emulated-pthread $ENV{IDEMZK_DIR}/zstd-wasm/zstd.o )
+if(WASM)
+    target_link_libraries(mdoc_zk_test $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a wasi-emulated-pthread $ENV{IDEMZK_DIR}/zstd-wasm/zstd.o )
+else()
+    target_link_libraries(mdoc_zk_test crypto zstd)
+endif()
 
 set(installable_libs mdoc_static)
 install(TARGETS ${installable_libs} DESTINATION lib)

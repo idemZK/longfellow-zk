@@ -37,6 +37,7 @@ elseif(ARCHITECTURE MATCHES "arm64")
     # Mac Arm
     set(ARCH_FLAGS -mcpu=apple-m1 -march=armv8-a+crypto)
 elseif(ARCHITECTURE MATCHES "wasm32")
+    set(WASM ON)
     include_directories("$ENV{IDEMZK_DIR}/openssl-wasm/precompiled/include")
     include_directories("$ENV{IDEMZK_DIR}/zstd-wasm/zstd/lib")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -msimd128")

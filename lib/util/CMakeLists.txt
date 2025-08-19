@@ -13,7 +13,11 @@
 # limitations under the License.
 
 add_library(util OBJECT log.cc crypto.cc)
-target_link_libraries(util $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a $ENV{IDEMZK_DIR}/zstd-wasm/zstd.o)
+if(WASM)
+    target_link_libraries(util $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libcrypto.a $ENV{IDEMZK_DIR}/openssl-wasm/precompiled/lib/libssl.a $ENV{IDEMZK_DIR}/zstd-wasm/zstd.o)
+else()
+    target_link_libraries(util crypto zstd)
+endif()
 
 proofs_add_tests(ceildiv_test)
 
