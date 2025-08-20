@@ -14,13 +14,6 @@
 
 cmake_minimum_required(VERSION 3.13)
 project(proofs)
-set(CMAKE_CXX_STANDARD 17)
-include(CMake/proofs.cmake)
-enable_testing()
-if (CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
-  link_directories("/opt/homebrew/lib")
-  include_directories("/opt/homebrew/include")
-endif()
 
 # add compiler flags for all known ISA's
 string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" ARCHITECTURE)
@@ -37,7 +30,7 @@ elseif(ARCHITECTURE MATCHES "arm64")
     # Mac Arm
     set(ARCH_FLAGS -mcpu=apple-m1 -march=armv8-a+crypto)
 elseif(ARCHITECTURE MATCHES "wasm32")
-    set(WASM ON)
+    set(WASM ON CACHE BOOL "Build for WebAssembly" FORCE)
     include_directories("$ENV{IDEMZK_DIR}/openssl-wasm/precompiled/include")
     include_directories("$ENV{IDEMZK_DIR}/zstd-wasm/zstd/lib")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -msimd128")
@@ -46,17 +39,27 @@ else()
     set(ARCH_FLAGS "")
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+include(CMake/proofs.cmake)
+enable_testing()
+if (CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
+    link_directories("/opt/homebrew/lib")
+    include_directories("/opt/homebrew/include")
+endif()
+
 if(ARCH_FLAGS)
     add_compile_options( "$<$<COMPILE_LANGUAGE:CXX>:${ARCH_FLAGS}>")
     message(STATUS "Compiler flags added for architecture ${ARCHITECTURE}: ${ARCH_FLAGS}")
 else()
-     message(STATUS "Architecture ${ARCHITECTURE} not recognized, no specific compiler flags added.")
+    message(STATUS "Architecture ${ARCHITECTURE} not recognized, no specific compiler flags added.")
 endif()
 
 
 include_directories(${proofs_SOURCE_DIR})
 
-# add_subdirectory(testing)
+if (NOT WASM)
+    add_subdirectory(testing)
+endif()
 add_subdirectory(util)
 add_subdirectory(algebra)
 add_subdirectory(arrays)
