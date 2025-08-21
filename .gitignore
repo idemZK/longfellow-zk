@@ -1,3 +1,2 @@
 install/
-clang-build-release-native
-clang-build-release-wasm
+clang-build-release-*
