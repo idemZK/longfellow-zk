@@ -290,8 +290,8 @@ static inline v128_t clmul128(v128_t a, v128_t b, int imm) {
   uint64_t hi = 0, lo = 0;
   switch (imm & 0x11) {
     case 0x00: clmul64(a_lo, b_lo, hi, lo); break;
-    case 0x01: clmul64(a_lo, b_hi, hi, lo); break; // low(a) * high(b)
-    case 0x10: clmul64(a_hi, b_lo, hi, lo); break;
+    case 0x01: clmul64(a_hi, b_lo, hi, lo); break;
+    case 0x10: clmul64(a_lo, b_hi, hi, lo); break;
     default  : clmul64(a_hi, b_hi, hi, lo); break;
   }
   return make128(lo, hi);  // (lo, hi) in our lane order
@@ -301,7 +301,7 @@ static inline v128_t clmul128(v128_t a, v128_t b, int imm) {
 static inline v128_t gf2_128_reduce(v128_t t0, v128_t t1) {
   // t0 ^= (t1 << 64) → low=0, high=lo64(t1)
   t0 = wasm_v128_xor(t0, make128(0, lo64(t1)));
-  const v128_t poly = make128(0ull, 0x87ull);     // lo=0, hi=0x87
+  const v128_t poly = make128(0x87ull, 0ull);
   const v128_t red  = clmul128(t1, poly, 0x01);   // low(t1) * high(poly)
   return wasm_v128_xor(t0, red);
 }
