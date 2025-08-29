@@ -41,7 +41,7 @@ elseif(DEFINED ENV{WASM_TARGET})
         message(FATAL_ERROR "Environment variable WASM_TARGET must be set to 'wasi' or 'emscripten'!")
     endif()
     include_directories("$ENV{IDEMZK_DIR}/openssl/include")
-    include_directories("$ENV{IDEMZK_DIR}/zstd-wasm/zstd/lib")
+    include_directories("$ENV{IDEMZK_DIR}/zstd/lib")
     # This might be wasi only?
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -msimd128")
     set(ARCH_FLAGS -D__wasm__)
